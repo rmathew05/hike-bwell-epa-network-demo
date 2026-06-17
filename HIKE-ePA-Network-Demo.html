@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIKE Health × b.well — National ePA Network (Prototype)</title>
+<style>
+  :root{
+    --bg:#0a0f1f; --bg2:#0e1530; --panel:#121a35; --panel2:#16204a;
+    --line:#22305c; --ink:#eaf0ff; --muted:#9aa9d4; --muted2:#6c7aa6;
+    --hike:#2dd4bf; --hike2:#14b8a6; --bwell:#6366f1; --bwell2:#818cf8;
+    --accent:#38bdf8; --good:#34d399; --warn:#fbbf24; --bad:#fb7185;
+    --radius:14px; --shadow:0 10px 40px rgba(0,0,0,.45);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 80% -10%,rgba(99,102,241,.16),transparent 60%),
+               radial-gradient(900px 600px at 0% 0%,rgba(45,212,191,.12),transparent 55%),
+               var(--bg);
+    color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* Header */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(10,15,31,.72);border-bottom:1px solid var(--line)}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 0}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.2px}
+  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--hike),var(--bwell));font-size:17px}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.3px}
+  .badge{margin-left:auto;font-size:11px;color:var(--muted);border:1px solid var(--line);
+    padding:5px 11px;border-radius:999px;background:var(--panel)}
+  nav{display:flex;gap:4px;overflow-x:auto;padding-bottom:10px}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);
+    padding:9px 15px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
+  nav button:hover{color:var(--ink);background:var(--panel)}
+  nav button.active{color:var(--ink);background:var(--panel2);border-color:var(--line)}
+
+  section{display:none;padding:34px 0 70px;animation:fade .35s ease}
+  section.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:34px;line-height:1.15;margin:0 0 10px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:0 0 6px;letter-spacing:-.3px}
+  h3{font-size:15px;margin:0 0 4px}
+  .lede{color:var(--muted);font-size:16px;max-width:760px}
+  .eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11.5px;font-weight:700;
+    color:var(--hike);margin-bottom:12px}
+  .gradtext{background:linear-gradient(100deg,var(--hike),var(--bwell2));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  .grid{display:grid;gap:16px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:var(--radius);padding:20px}
+  .card.tight{padding:16px}
+  .stat{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .stat.good{color:var(--good)} .stat.hike{color:var(--hike)} .stat.bwell{color:var(--bwell2)}
+  .statlabel{color:var(--muted);font-size:13px;margin-top:3px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+    padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+  .pill.crd{color:#7dd3fc;border-color:#1e3a5f}
+  .pill.dtr{color:#fbbf24;border-color:#5f4a1e}
+  .pill.pas{color:#34d399;border-color:#1e5f3f}
+  .muted{color:var(--muted)}
+  .small{font-size:13px}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:11px;padding:12px 20px;
+    font-size:14px;font-weight:700;cursor:pointer;transition:.15s;color:#04121a;
+    background:linear-gradient(135deg,var(--hike),var(--hike2))}
+  .btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:var(--panel)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+  /* network viz */
+  .vizwrap{position:relative;border:1px solid var(--line);border-radius:var(--radius);
+    background:radial-gradient(700px 400px at 50% 50%,rgba(99,102,241,.08),transparent 70%),var(--bg2);overflow:hidden}
+  svg{display:block;width:100%;height:auto}
+  .nodelabel{font-size:11px;fill:var(--muted);font-weight:600}
+  .hublabel{font-size:13px;fill:var(--ink);font-weight:800}
+
+  /* portal */
+  .portal{display:grid;grid-template-columns:300px 1fr;gap:18px}
+  @media(max-width:880px){.portal{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
+  .ehrbar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);
+    border:1px dashed var(--line);border-radius:10px;padding:8px 12px;margin-bottom:14px;background:rgba(99,102,241,.05)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 10px var(--good)}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .field .val{font-size:14px;font-weight:600}
+  select,input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    padding:10px 12px;border-radius:10px;font-size:14px;font-family:inherit}
+
+  .flow{position:relative}
+  .step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);opacity:.4;transition:.4s}
+  .step:last-child{border-bottom:0}
+  .step.active{opacity:1}
+  .step.done{opacity:1}
+  .stepnum{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    font-weight:800;font-size:14px;border:2px solid var(--line);color:var(--muted);background:var(--bg)}
+  .step.active .stepnum{border-color:var(--hike);color:var(--hike);box-shadow:0 0 0 4px rgba(45,212,191,.15)}
+  .step.done .stepnum{border-color:var(--good);color:#04121a;background:var(--good)}
+  .stepbody{flex:1}
+  .stepbody .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .payload{margin-top:10px;background:#070b18;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    color:#bcd;white-space:pre-wrap;max-height:0;overflow:hidden;transition:max-height .5s ease,padding .3s}
+  .step.active .payload,.step.done .payload{max-height:340px;padding:12px 14px}
+  .payload .k{color:#7dd3fc}.payload .s{color:#a7f3d0}.payload .n{color:#fbbf24}.payload .c{color:var(--muted2)}
+
+  .result{margin-top:20px;border-radius:var(--radius);padding:20px;border:1px solid var(--line);display:none}
+  .result.show{display:block;animation:fade .4s}
+  .result.approve{background:linear-gradient(180deg,rgba(52,211,153,.12),transparent);border-color:#1e5f3f}
+  .result h2{display:flex;align-items:center;gap:10px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  td .pill{font-size:10.5px;padding:3px 8px}
+  .status-approved{color:var(--good)}.status-pending{color:var(--warn)}.status-info{color:var(--accent)}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:780px){.two{grid-template-columns:1fr}.portal{grid-template-columns:1fr}}
+  .list{list-style:none;padding:0;margin:0}
+  .list li{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+  .list li:last-child{border-bottom:0}
+  .chk{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:rgba(45,212,191,.15);
+    color:var(--hike);display:grid;place-items:center;font-size:13px;font-weight:800;margin-top:1px}
+  .partner{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:780px){.partner{grid-template-columns:1fr}}
+  .ph{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .pmark{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px}
+  .pmark.h{background:linear-gradient(135deg,var(--hike),var(--hike2));color:#04121a}
+  .pmark.b{background:linear-gradient(135deg,var(--bwell),var(--bwell2));color:#fff}
+  footer{border-top:1px solid var(--line);color:var(--muted2);font-size:12px;padding:22px 0 40px;text-align:center}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;padding:14px 18px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .ldot{width:11px;height:11px;border-radius:50%}
+  .note{font-size:11.5px;color:var(--muted2);margin-top:6px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:780px){.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">⇄</div>
+        <div>HIKE Health <span style="color:var(--muted2)">×</span> b.well
+          <small>National Electronic Prior Authorization Network</small>
+        </div>
+      </div>
+      <div class="badge">● Interactive Prototype</div>
+    </div>
+    <nav id="nav">
+      <button data-t="partnership" class="active">Partnership</button>
+      <button data-t="overview">Overview</button>
+      <button data-t="network">Network</button>
+      <button data-t="portal">Provider Portal</button>
+      <button data-t="flow">Live ePA Flow</button>
+      <button data-t="dashboard">Dashboard</button>
+    </nav>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section id="overview"><div class="wrap">
+  <div class="eyebrow">CMS-0057-F · Effective January 1, 2027</div>
+  <h1>One FHIR connection.<br><span class="gradtext">Every payer in the network.</span></h1>
+  <p class="lede">CMS-0057-F mandates that ~1,296 payers stand up live, FHIR-based Prior Authorization APIs — but providers face 1,000+ endpoints with no central registry. HIKE Health's ePA Network is the standards-based, FHIR-native broker-of-brokers that connects providers once and reaches them all.</p>
+  <div class="btnrow">
+    <button class="btn" onclick="go('flow')">▶ Run a live PA request</button>
+    <button class="btn ghost" onclick="go('network')">See the network model</button>
+  </div>
+
+  <div class="grid cards" style="margin-top:34px">
+    <div class="card"><div class="stat hike">1,296</div><div class="statlabel">Impacted payer organizations under CMS-0057-F</div></div>
+    <div class="card"><div class="stat">13 hrs</div><div class="statlabel">Per provider, per week spent on prior auth today</div></div>
+    <div class="card"><div class="stat">$35B+</div><div class="statlabel">Annual U.S. administrative cost of prior auth</div></div>
+    <div class="card"><div class="stat bad" style="color:var(--bad)">1 in 4</div><div class="statlabel">Physicians reporting a PA delay caused a serious adverse event</div></div>
+  </div>
+
+  <div class="two" style="margin-top:30px">
+    <div class="card">
+      <div class="eyebrow" style="color:var(--bad)">The Problem</div>
+      <h2>The rule that should streamline care will stall at adoption</h2>
+      <ul class="list" style="margin-top:8px">
+        <li><div class="chk" style="background:rgba(251,113,133,.15);color:var(--bad)">!</div><div><strong>1,000+ endpoints, no registry.</strong> <span class="muted small">Each provider must independently discover, credential, and integrate every payer API — a multi-year effort for large systems.</span></div></li>
+        <li><div class="chk" style="background:rgba(251,113,133,.15);color:var(--bad)">!</div><div><strong>EHR fragmentation.</strong> <span class="muted small">Legacy/niche EHRs, DME suppliers, and ambulatory practices can't natively consume FHIR PA APIs.</span></div></li>
+        <li><div class="chk" style="background:rgba(251,113,133,.15);color:var(--bad)">!</div><div><strong>No provider mandate.</strong> <span class="muted small">Without a frictionless on-ramp, the default stays fax and portals — repeating the underused Patient Access API.</span></div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="eyebrow">The Solution</div>
+      <h2>A national ePA network — the HIE playbook, applied to prior auth</h2>
+      <ul class="list" style="margin-top:8px">
+        <li><div class="chk">✓</div><div><strong>Single FHIR endpoint.</strong> <span class="muted small">Integrate once via API, a SMART on FHIR app in-EHR, or a standalone portal.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>Non-compatible EHR coverage.</strong> <span class="muted small">Patent-pending methods bring legacy / non-FHIR EHRs into electronic PA without migration.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>Bidirectional routing.</strong> <span class="muted small">Routes requests to the right payer and returns decisions in real time — aligned to Da Vinci CRD, DTR & PAS.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>Pre-seeded payer connections.</strong> <span class="muted small">Existing health-system & DME relationships accelerate time-to-value.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- NETWORK -->
+<section id="network"><div class="wrap">
+  <div class="eyebrow">Hub-and-Spoke Architecture</div>
+  <h1>Connect once. Reach everyone.</h1>
+  <p class="lede">Without a network, every provider must build a connection to every payer — an N×M integration nightmare. The HIKE hub collapses that into a single connection per participant. Press play to watch live PA traffic route through the hub.</p>
+  <div class="btnrow">
+    <button class="btn" id="vizPlay">▶ Animate traffic</button>
+    <button class="btn ghost" id="vizToggle">Show: <b id="vizMode" style="margin-left:4px">With HIKE Network</b></button>
+  </div>
+
+  <div class="vizwrap" style="margin-top:20px">
+    <svg id="viz" viewBox="0 0 1000 540" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="legend" style="border-top:1px solid var(--line)">
+      <span><i class="ldot" style="background:var(--hike)"></i> Provider organizations</span>
+      <span><i class="ldot" style="background:var(--bwell2)"></i> Payer ePA APIs</span>
+      <span><i class="ldot" style="background:var(--accent)"></i> HIKE × b.well hub</span>
+      <span id="connCount" class="muted" style="margin-left:auto"></span>
+    </div>
+  </div>
+  <p class="note">Illustrative. CRD = Coverage Requirements Discovery · DTR = Documentation Templates &amp; Rules · PAS = Prior Authorization Support (HL7 Da Vinci implementation guides underlying CMS-0057-F).</p>
+</div></section>
+
+<!-- PORTAL -->
+<section id="portal"><div class="wrap">
+  <div class="eyebrow">SMART on FHIR · Embedded Provider Experience</div>
+  <h1>The provider portal</h1>
+  <p class="lede">A clinician launches the ePA app from inside their EHR. Patient and order context carry over automatically. Pick an order, and the network checks requirements across every connected payer.</p>
+
+  <div class="ehrbar" style="margin-top:18px">
+    <span class="dot"></span> Launched in-context from <b style="color:var(--ink);margin:0 4px">Epic · Hyperspace</b> — SMART on FHIR · patient context inherited
+  </div>
+
+  <div class="portal">
+    <div class="card tight">
+      <h3 style="margin-bottom:12px">Patient</h3>
+      <div class="field"><label>Name</label><div class="val">Maria Gonzalez</div></div>
+      <div class="field"><label>DOB / Sex</label><div class="val">1958-03-12 · F</div></div>
+      <div class="field"><label>Coverage</label><div class="val">UnitedHealthcare MA <span class="pill" style="margin-left:4px">●&nbsp;Connected</span></div></div>
+      <div class="field"><label>Member ID</label><div class="val">UHC-884-220-19</div></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+      <div class="field"><label>Select order to authorize</label>
+        <select id="orderSel">
+          <option value="mri">MRI Lumbar Spine w/o contrast (72148)</option>
+          <option value="dme">Power Wheelchair – Group 2 (K0823)</option>
+          <option value="rx">Adalimumab (Humira) injection (J0135)</option>
+          <option value="pt">Physical Therapy – 12 visits (97110)</option>
+        </select>
+      </div>
+      <button class="btn" style="width:100%;justify-content:center" id="checkBtn">Check PA requirements</button>
+    </div>
+
+    <div class="card" id="portalRight">
+      <h3>Coverage Requirements (CRD)</h3>
+      <p class="muted small" id="crdHint">Select an order and run a check. The network queries the payer's Da Vinci CRD service in real time.</p>
+      <div id="crdResult"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- FLOW -->
+<section id="flow"><div class="wrap">
+  <div class="eyebrow">End-to-End · Da Vinci CRD → DTR → PAS</div>
+  <h1>Live ePA request</h1>
+  <p class="lede">Watch a prior authorization travel from the provider's EHR, through the HIKE hub, to the payer and back — at each Da Vinci stage. Payloads are illustrative FHIR.</p>
+  <div class="btnrow">
+    <button class="btn" id="runFlow">▶ Submit prior authorization</button>
+    <button class="btn ghost" id="resetFlow">Reset</button>
+    <span class="pill crd">CRD</span><span class="pill dtr">DTR</span><span class="pill pas">PAS</span>
+  </div>
+
+  <div class="card flow" id="flowSteps" style="margin-top:22px">
+    <div class="step" data-i="0">
+      <div class="stepnum">1</div>
+      <div class="stepbody">
+        <h3>Provider submits order <span class="pill" style="margin-left:6px">EHR → HIKE</span></h3>
+        <div class="meta">Clinician orders MRI Lumbar Spine. SMART on FHIR app packages the request and sends it to the single HIKE endpoint.</div>
+        <div class="payload">POST /hike/fhir/ServiceRequest
+<span class="k">"resourceType"</span>: <span class="s">"ServiceRequest"</span>,
+<span class="k">"code"</span>: <span class="s">"72148"</span> <span class="c">// MRI lumbar w/o contrast</span>,
+<span class="k">"subject"</span>: <span class="s">"Patient/maria-gonzalez"</span>,
+<span class="k">"insurer"</span>: <span class="s">"UnitedHealthcare-MA"</span></div>
+      </div>
+    </div>
+    <div class="step" data-i="1">
+      <div class="stepnum">2</div>
+      <div class="stepbody">
+        <h3>HIKE resolves payer &amp; queries CRD <span class="pill crd" style="margin-left:6px">Coverage Requirements Discovery</span></h3>
+        <div class="meta">Hub looks up the member's payer in the network registry and calls that payer's CRD service. Is prior auth required?</div>
+        <div class="payload">GET /uhc/crd/coverage-requirements?code=72148
+→ <span class="n">{ "priorAuthRequired": true, "dtrTemplate": "imaging-lumbar-v3" }</span></div>
+      </div>
+    </div>
+    <div class="step" data-i="2">
+      <div class="stepbody"><div class="stepnum">3</div></div>
+      <div class="stepbody">
+        <h3>DTR auto-fills clinical documentation <span class="pill dtr" style="margin-left:6px">Documentation Templates &amp; Rules</span></h3>
+        <div class="meta">The payer's questionnaire is fetched and pre-populated from the EHR chart — conservative therapy tried, duration, prior imaging — with no manual re-keying.</div>
+        <div class="payload">QuestionnaireResponse: imaging-lumbar-v3
+<span class="k">"conservativeTherapy"</span>: <span class="s">"6 weeks PT + NSAIDs"</span> <span class="c">(auto)</span>,
+<span class="k">"redFlags"</span>: <span class="s">"progressive neuro deficit"</span> <span class="c">(auto)</span>,
+<span class="k">"priorImaging"</span>: <span class="s">"none in 12 mo"</span> <span class="c">(auto)</span></div>
+      </div>
+    </div>
+    <div class="step" data-i="3">
+      <div class="stepbody"><div class="stepnum">4</div></div>
+      <div class="stepbody">
+        <h3>HIKE submits PAS to payer <span class="pill pas" style="margin-left:6px">Prior Authorization Support</span></h3>
+        <div class="meta">Bundled request routed to the payer's PAS endpoint. HIKE handles transport, auth, and format translation — including for non-FHIR-native providers.</div>
+        <div class="payload">POST /uhc/pas/Claim/$submit
+<span class="k">"use"</span>: <span class="s">"preauthorization"</span>,
+<span class="k">"item"</span>: <span class="s">"72148"</span>, <span class="k">"supportingInfo"</span>: <span class="s">"QuestionnaireResponse"</span>
+→ <span class="c">routing… awaiting payer decision</span></div>
+      </div>
+    </div>
+    <div class="step" data-i="4">
+      <div class="stepbody"><div class="stepnum">5</div></div>
+      <div class="stepbody">
+        <h3>Decision returns to the provider <span class="pill" style="margin-left:6px">HIKE → EHR</span></h3>
+        <div class="meta">Payer adjudicates and returns the decision through the hub to the originating EHR — status, auth number, and rationale, in real time.</div>
+        <div class="payload">ClaimResponse
+<span class="k">"outcome"</span>: <span class="s">"complete"</span>,
+<span class="k">"disposition"</span>: <span class="s">"Approved"</span>,
+<span class="k">"preAuthRef"</span>: <span class="s">"AUTH-2027-77310"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result approve" id="flowResult">
+    <h2>✅ Prior Authorization Approved</h2>
+    <div class="two" style="margin-top:14px">
+      <div><div class="statlabel">Auth number</div><div class="stat" style="font-size:22px">AUTH-2027-77310</div></div>
+      <div><div class="statlabel">Decision time, end-to-end</div><div class="stat good" style="font-size:22px">38 seconds</div></div>
+    </div>
+    <p class="muted small" style="margin-top:14px">Traditional fax/portal turnaround for the same request averages <b>3–10 business days</b>. The approval, auth number, and clinical rationale are written back into the EHR automatically — no portal, no fax, no re-keying.</p>
+  </div>
+</div></section>
+
+<!-- DASHBOARD -->
+<section id="dashboard"><div class="wrap">
+  <div class="eyebrow">Network Operations · Illustrative</div>
+  <h1>Network dashboard</h1>
+  <p class="lede">A live view of network density and performance — the metric that wins the 2027 land-grab. Network value compounds with every payer and provider added.</p>
+
+  <div class="kpis" style="margin-top:22px">
+    <div class="card tight"><div class="stat hike" id="kProviders">0</div><div class="statlabel">Provider orgs connected</div></div>
+    <div class="card tight"><div class="stat bwell" id="kPayers">0</div><div class="statlabel">Payer ePA APIs in network</div></div>
+    <div class="card tight"><div class="stat" id="kRequests">0</div><div class="statlabel">PA requests routed (30d)</div></div>
+    <div class="card tight"><div class="stat good" id="kTime">0s</div><div class="statlabel">Median decision time</div></div>
+  </div>
+
+  <div class="two" style="margin-top:18px">
+    <div class="card">
+      <h3 style="margin-bottom:14px">Recent network activity</h3>
+      <table>
+        <thead><tr><th>Time</th><th>Provider</th><th>Order</th><th>Payer</th><th>Status</th></tr></thead>
+        <tbody id="actBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:14px">Auto-determination outcomes (30d)</h3>
+      <div id="bars"></div>
+      <div class="card tight" style="margin-top:16px;background:var(--bg2)">
+        <div class="statlabel">Estimated provider burden reduced</div>
+        <div class="stat good" style="font-size:26px">11.4 hrs / provider / week</div>
+        <p class="note">Modeled from 13 hrs/week baseline at current network auto-fill + auto-determination rates.</p>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- PARTNERSHIP -->
+<section id="partnership" class="show"><div class="wrap">
+  <div class="eyebrow">The Joint Venture</div>
+  <h1>Why HIKE × b.well is the right team</h1>
+  <p class="lede">A lean innovation unit at the edge of b.well's organization: HIKE supplies implementation velocity and regulatory credibility; b.well supplies distribution, payer relationships, and CMS-aligned trust.</p>
+
+  <div class="partner" style="margin-top:24px">
+    <div class="card">
+      <div class="ph"><div class="pmark h">H</div><h2>HIKE Health</h2></div>
+      <p class="muted small" style="margin-top:-4px">Deep technical credibility, ready to move.</p>
+      <ul class="list" style="margin-top:8px">
+        <li><div class="chk">✓</div><div><strong>Active HL7 Da Vinci contributor</strong><span class="muted small"> — CRD, DTR & PAS guides, the exact specs behind CMS-0057-F.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>CMS connectathon engagement</strong><span class="muted small"> — direct line to the policy & technical requirements.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>HIE operational leadership</strong><span class="muted small"> — built healthcare networks at scale; hub-and-spoke is the natural extension.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>50-engineer bench</strong><span class="muted small"> — 2+ yrs implementing CMS-0057-F for multiple payers.</span></div></li>
+        <li><div class="chk">✓</div><div><strong>Provider network access</strong><span class="muted small"> — health-system & DME relationships as anchor participants.</span></div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="ph"><div class="pmark b">b</div><h2>b.well Connected Health</h2></div>
+      <p class="muted small" style="margin-top:-4px">Distribution, infrastructure, and strategic scale.</p>
+      <ul class="list" style="margin-top:8px">
+        <li><div class="chk" style="background:rgba(99,102,241,.18);color:var(--bwell2)">✓</div><div><strong>1.8M provider connections</strong><span class="muted small"> — largest connected health data footprint in the U.S.</span></div></li>
+        <li><div class="chk" style="background:rgba(99,102,241,.18);color:var(--bwell2)">✓</div><div><strong>300+ payer connections</strong><span class="muted small"> — instant breadth for payer onboarding.</span></div></li>
+        <li><div class="chk" style="background:rgba(99,102,241,.18);color:var(--bwell2)">✓</div><div><strong>CMS-Aligned Network</strong><span class="muted small"> — among the first committed; ePA Early Adopters participant.</span></div></li>
+        <li><div class="chk" style="background:rgba(99,102,241,.18);color:var(--bwell2)">✓</div><div><strong>Gartner-recognized</strong><span class="muted small"> — leader in healthcare experience orchestration.</span></div></li>
+        <li><div class="chk" style="background:rgba(99,102,241,.18);color:var(--bwell2)">✓</div><div><strong>Live at national scale</strong><span class="muted small"> — Humana partnership demonstrates production interoperability.</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2>The JV scorecard</h2>
+    <div class="grid cards" style="margin-top:14px">
+      <div class="card tight" style="background:var(--bg2)"><h3 class="hike" style="color:var(--hike)">b.well wins</h3><p class="muted small">A high-value 2027 network with no diversion of core engineering — a strategic capability absorbable into the platform anytime.</p></div>
+      <div class="card tight" style="background:var(--bg2)"><h3 style="color:var(--bwell2)">HIKE wins</h3><p class="muted small">Distribution, 300+ payer relationships, and CMS-aligned credibility at national scale from day one.</p></div>
+      <div class="card tight" style="background:var(--bg2)"><h3 class="good" style="color:var(--good)">Both win</h3><p class="muted small">Shared resources de-risk investment; combined readiness beats competing in parallel.</p></div>
+      <div class="card tight" style="background:var(--bg2)"><h3 style="color:var(--accent)">CMS vision</h3><p class="muted small">Drives real adoption & utilization of ePA APIs — not just compliance.</p></div>
+    </div>
+    <p class="lede" style="margin-top:20px;font-size:17px;color:var(--ink)">"The 2027 deadline is not the finish line — it's the starting gun. Whoever establishes network density in 2026–2027 will define the standard for years."</p>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  Confidential interactive prototype · HIKE HEALTH × b.well Connected Health · National ePA Network · June 2026<br>
+  All data, payloads, and metrics shown are illustrative for demonstration purposes.
+</div></footer>
+
+<script>
+// ---------- nav ----------
+const nav=document.getElementById('nav');
+function go(t){
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('show',s.id===t));
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.t===t));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(t==='network') buildViz();
+  if(t==='dashboard') animateDash();
+}
+nav.addEventListener('click',e=>{if(e.target.dataset.t) go(e.target.dataset.t);});
+
+// ---------- network viz ----------
+const svg=document.getElementById('viz');
+let withHub=true, vizBuilt=false;
+const NS='http://www.w3.org/2000/svg';
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+const providers=['Mercy Health','Ambulatory Group','DME Supplier Co','Rural Clinic Net','Specialty Surgical','Legacy EHR Practice'];
+const payers=['UnitedHealthcare','Humana MA','State Medicaid','Aetna QHP','Cigna','BCBS FFS','CHIP Managed'];
+
+function buildViz(){
+  svg.innerHTML='';
+  const W=1000,H=540,cx=500,cy=270;
+  // left providers, right payers
+  const lp=providers.map((n,i)=>({n,x:150,y:90+i*(360/(providers.length-1))}));
+  const rp=payers.map((n,i)=>({n,x:850,y:70+i*(400/(payers.length-1))}));
+
+  // edges
+  const eg=el('g',{});svg.appendChild(eg);
+  if(withHub){
+    lp.forEach(p=>eg.appendChild(el('path',{d:`M${p.x+58},${p.y} C320,${p.y} 380,${cy} ${cx-46},${cy}`,stroke:'rgba(45,212,191,.35)',fill:'none','stroke-width':1.6})));
+    rp.forEach(p=>eg.appendChild(el('path',{d:`M${cx+46},${cy} C620,${cy} 680,${p.y} ${p.x-58},${p.y}`,stroke:'rgba(129,140,248,.35)',fill:'none','stroke-width':1.6})));
+    document.getElementById('connCount').textContent=`${lp.length+rp.length} connections · 1 per participant`;
+  } else {
+    lp.forEach(p=>rp.forEach(q=>eg.appendChild(el('line',{x1:p.x+58,y1:p.y,x2:q.x-58,y2:q.y,stroke:'rgba(251,113,133,.22)','stroke-width':1}))));
+    document.getElementById('connCount').textContent=`${lp.length*rp.length} point-to-point connections · N×M`;
+  }
+
+  // hub
+  if(withHub){
+    svg.appendChild(el('circle',{cx,cy,r:62,fill:'rgba(56,189,248,.08)',stroke:'rgba(56,189,248,.4)','stroke-width':1}));
+    const hub=el('circle',{cx,cy,r:42,fill:'url(#hg)',stroke:'#38bdf8','stroke-width':2});svg.appendChild(hub);
+    const defs=el('defs',{});const grad=el('radialGradient',{id:'hg'});
+    grad.appendChild(el('stop',{offset:'0%','stop-color':'#2dd4bf'}));
+    grad.appendChild(el('stop',{offset:'100%','stop-color':'#6366f1'}));
+    defs.appendChild(grad);svg.appendChild(defs);
+    const t1=el('text',{x:cx,y:cy-2,'text-anchor':'middle',class:'hublabel'});t1.textContent='HIKE × b.well';svg.appendChild(t1);
+    const t2=el('text',{x:cx,y:cy+15,'text-anchor':'middle',class:'nodelabel',fill:'#cfe'});t2.textContent='ePA Hub';svg.appendChild(t2);
+  }
+
+  // nodes
+  function node(p,color,anchor){
+    const g=el('g',{});
+    g.appendChild(el('circle',{cx:p.x,cy:p.y,r:13,fill:color,stroke:'#0a0f1f','stroke-width':2}));
+    const t=el('text',{x:anchor==='end'?p.x-20:p.x+20,y:p.y+4,'text-anchor':anchor,class:'nodelabel'});
+    t.textContent=p.n;g.appendChild(t);
+    svg.appendChild(g);
+  }
+  lp.forEach(p=>node(p,'#2dd4bf','end'));
+  rp.forEach(p=>node(p,'#818cf8','start'));
+
+  svg._lp=lp;svg._rp=rp;svg._cx=cx;svg._cy=cy;
+  vizBuilt=true;
+}
+document.getElementById('vizToggle').addEventListener('click',()=>{
+  withHub=!withHub;
+  document.getElementById('vizMode').textContent=withHub?'With HIKE Network':'Point-to-Point (no network)';
+  buildViz();
+});
+document.getElementById('vizPlay').addEventListener('click',()=>{
+  if(!vizBuilt||!withHub){withHub=true;document.getElementById('vizMode').textContent='With HIKE Network';buildViz();}
+  const {_lp,_rp,_cx,_cy}=svg;
+  // animate a packet provider->hub->payer
+  const p=_lp[Math.floor(Math.random()*_lp.length)];
+  const q=_rp[Math.floor(Math.random()*_rp.length)];
+  fireDot(p.x+58,p.y,_cx-46,_cy,'#2dd4bf',()=>{
+    fireDot(_cx+46,_cy,q.x-58,q.y,'#818cf8',()=>{
+      // return decision
+      fireDot(q.x-58,q.y,_cx+46,_cy,'#34d399',()=>{
+        fireDot(_cx-46,_cy,p.x+58,p.y,'#34d399');
+      });
+    });
+  });
+});
+function fireDot(x1,y1,x2,y2,color,done){
+  const d=el('circle',{cx:x1,cy:y1,r:6,fill:color,filter:'drop-shadow(0 0 6px '+color+')'});
+  svg.appendChild(d);
+  const start=performance.now(),dur=620;
+  function step(now){
+    const t=Math.min(1,(now-start)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    d.setAttribute('cx',x1+(x2-x1)*e);d.setAttribute('cy',y1+(y2-y1)*e);
+    if(t<1)requestAnimationFrame(step);else{d.remove();done&&done();}
+  }
+  requestAnimationFrame(step);
+}
+
+// ---------- portal CRD ----------
+const orders={
+  mri:{req:true,payer:'UnitedHealthcare MA',msg:'Prior authorization REQUIRED. Da Vinci DTR template "imaging-lumbar-v3" available for auto-fill.',cls:'pill dtr'},
+  dme:{req:true,payer:'UnitedHealthcare MA',msg:'Prior authorization REQUIRED. Face-to-face encounter + Standard Written Order needed. Template "dme-mobility-v2".',cls:'pill dtr'},
+  rx:{req:true,payer:'UnitedHealthcare MA',msg:'Prior authorization REQUIRED (specialty drug). Step therapy attestation template "rx-biologic-v4".',cls:'pill dtr'},
+  pt:{req:false,payer:'UnitedHealthcare MA',msg:'No prior authorization required for first 12 visits. Proceed — no submission needed.',cls:'pill pas'}
+};
+document.getElementById('checkBtn').addEventListener('click',()=>{
+  const k=document.getElementById('orderSel').value,o=orders[k];
+  document.getElementById('crdHint').style.display='none';
+  const box=document.getElementById('crdResult');
+  box.innerHTML='<div class="muted small">Querying UnitedHealthcare CRD service…</div>';
+  setTimeout(()=>{
+    box.innerHTML=`
+      <div class="card tight" style="background:var(--bg2);margin-top:10px;border-color:${o.req?'#5f4a1e':'#1e5f3f'}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span class="pill ${o.req?'dtr':'pas'}">${o.req?'PA REQUIRED':'NO PA NEEDED'}</span>
+          <span class="muted small">via ${o.payer} · CRD</span>
+        </div>
+        <p style="margin:0 0 4px">${o.msg}</p>
+      </div>
+      ${o.req?'<button class="btn" style="width:100%;justify-content:center;margin-top:12px" onclick="go(\'flow\')">Continue to submission (DTR → PAS) →</button>':''}
+      <p class="note">Response returned in &lt;1s. Without the network, this check would require an account, portal login, and manual lookup at each payer.</p>`;
+  },650);
+});
+
+// ---------- flow ----------
+let flowTimer=null;
+function resetFlow(){
+  clearTimeout(flowTimer);
+  document.querySelectorAll('#flowSteps .step').forEach(s=>s.classList.remove('active','done'));
+  document.getElementById('flowResult').classList.remove('show');
+  document.getElementById('runFlow').disabled=false;
+}
+document.getElementById('resetFlow').addEventListener('click',resetFlow);
+document.getElementById('runFlow').addEventListener('click',()=>{
+  resetFlow();
+  document.getElementById('runFlow').disabled=true;
+  const steps=[...document.querySelectorAll('#flowSteps .step')];
+  let i=0;
+  function next(){
+    if(i>0)steps[i-1].classList.replace('active','done');
+    if(i<steps.length){
+      steps[i].classList.add('active');
+      i++;flowTimer=setTimeout(next,1500);
+    } else {
+      document.getElementById('flowResult').classList.add('show');
+      document.getElementById('runFlow').disabled=false;
+      document.getElementById('flowResult').scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }
+  next();
+});
+
+// ---------- dashboard ----------
+let dashDone=false;
+function animateDash(){
+  if(dashDone)return;dashDone=true;
+  countTo('kProviders',1842,1200,v=>v.toLocaleString());
+  countTo('kPayers',317,1200,v=>v);
+  countTo('kRequests',128450,1400,v=>v.toLocaleString());
+  countTo('kTime',41,1000,v=>v+'s');
+  // activity table
+  const rows=[
+    ['10:42','Mercy Health','MRI Lumbar (72148)','UnitedHealthcare','Approved','status-approved'],
+    ['10:41','DME Supplier Co','Power Wheelchair (K0823)','Humana MA','Pending docs','status-pending'],
+    ['10:40','Ambulatory Group','Humira (J0135)','Aetna QHP','Approved','status-approved'],
+    ['10:39','Rural Clinic Net','PT 12 visits (97110)','State Medicaid','No PA needed','status-info'],
+    ['10:38','Specialty Surgical','CT Abdomen (74178)','Cigna','Approved','status-approved'],
+    ['10:37','Legacy EHR Practice','Sleep Study (95810)','BCBS FFS','Approved','status-approved'],
+  ];
+  document.getElementById('actBody').innerHTML=rows.map(r=>
+    `<tr><td class="muted">${r[0]}</td><td>${r[1]}</td><td class="muted small">${r[2]}</td><td>${r[3]}</td><td class="${r[5]}">${r[4]}</td></tr>`).join('');
+  // bars
+  const bars=[['Auto-approved',58,'var(--good)'],['Approved after DTR',27,'var(--hike)'],['Pending / more info',11,'var(--warn)'],['Denied (with rationale)',4,'var(--bad)']];
+  document.getElementById('bars').innerHTML=bars.map(b=>`
+    <div style="margin-bottom:13px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>${b[0]}</span><span class="muted">${b[1]}%</span></div>
+      <div style="height:9px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="height:100%;width:0;background:${b[2]};border-radius:6px;transition:width 1s ease" data-w="${b[1]}"></div></div>
+    </div>`).join('');
+  setTimeout(()=>document.querySelectorAll('#bars [data-w]').forEach(d=>d.style.width=d.dataset.w+'%'),100);
+}
+function countTo(id,target,dur,fmt){
+  const el=document.getElementById(id),start=performance.now();
+  function step(now){
+    const t=Math.min(1,(now-start)/dur),e=1-Math.pow(1-t,3);
+    el.textContent=fmt(Math.round(target*e));
+    if(t<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+</script>
+</body>
+</html>
